@@ -10,16 +10,17 @@ public class PlayerGravity : MonoBehaviour
     public float rotationSpeed = 5f;
     public KeyCode gravityKey = KeyCode.LeftShift;
 
-    // This is the property that was missing
     public bool IsFlipped { get; private set; }
 
-    private bool isFlipping = false;
+    // This is now public so other scripts can see it
+    public bool isFlipping { get; private set; }
+
     private ThirdPersonController _thirdPersonController;
 
     void Start()
     {
         _thirdPersonController = GetComponent<ThirdPersonController>();
-        IsFlipped = false; // Start not flipped
+        IsFlipped = false;
     }
 
     void Update()
@@ -33,8 +34,6 @@ public class PlayerGravity : MonoBehaviour
     private void FlipGravity()
     {
         isFlipping = true;
-
-        // Update our flipped state
         IsFlipped = !IsFlipped;
 
         Physics.gravity *= -1;

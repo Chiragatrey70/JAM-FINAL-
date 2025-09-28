@@ -145,6 +145,15 @@ namespace StarterAssets
 
         private void Move()
         {
+            // --- THIS IS THE FINAL FIX ---
+            // If we are in the middle of flipping, stop all movement.
+            if (_playerGravity != null && _playerGravity.isFlipping)
+            {
+                _speed = 0f;
+                _input.move = Vector2.zero; // Also clear the input to prevent rotation calculation
+            }
+            // --- END OF FIX ---
+
             float targetSpeed = _input.sprint ? SprintSpeed : MoveSpeed;
             if (_input.move == Vector2.zero) targetSpeed = 0.0f;
             float currentHorizontalSpeed = new Vector3(_controller.velocity.x, 0.0f, _controller.velocity.z).magnitude;
@@ -174,7 +183,8 @@ namespace StarterAssets
                 float zRotation = (_playerGravity != null && _playerGravity.IsFlipped) ? 180.0f : 0.0f;
                 transform.rotation = Quaternion.Euler(0.0f, rotation, zRotation);
             }
-            Vector3 targetDirection = Quaternion.Euler(0.0f, _targetRotation, 0.0f) * Vector3.forward;
+
+            Vector3 targetDirection = transform.forward;
             _controller.Move(targetDirection.normalized * (_speed * Time.deltaTime) + new Vector3(0.0f, _verticalVelocity, 0.0f) * Time.deltaTime);
             if (_hasAnimator)
             {
@@ -183,23 +193,16 @@ namespace StarterAssets
             }
         }
 
-        // --- THIS ENTIRE METHOD HAS BEEN REPLACED ---
         private void JumpAndGravity()
         {
             if (Grounded)
             {
-                // reset the fall timeout timer
                 _fallTimeoutDelta = FallTimeout;
-
-                // update animator if using character
                 if (_hasAnimator)
                 {
                     _animator.SetBool(_animIDJump, false);
                     _animator.SetBool(_animIDFreeFall, false);
                 }
-
-                // stop our velocity dropping infinitely when grounded
-                // also apply a small downward/upward force to stick to surfaces.
                 if (Gravity < 0f)
                 {
                     _verticalVelocity = -2f;
@@ -208,24 +211,15 @@ namespace StarterAssets
                 {
                     _verticalVelocity = 2f;
                 }
-
-                // Jump
                 if (_input.jump && _jumpTimeoutDelta <= 0.0f)
                 {
-                    // This new formula is robust and works with both positive and negative gravity.
-                    // It calculates the magnitude of the jump force...
                     var jumpMagnitude = Mathf.Sqrt(JumpHeight * 2f * Mathf.Abs(Gravity));
-                    // ...and then applies it in the direction opposite to gravity.
                     _verticalVelocity = jumpMagnitude * -Mathf.Sign(Gravity);
-
-                    // update animator if using character
                     if (_hasAnimator)
                     {
                         _animator.SetBool(_animIDJump, true);
                     }
                 }
-
-                // jump timeout
                 if (_jumpTimeoutDelta >= 0.0f)
                 {
                     _jumpTimeoutDelta -= Time.deltaTime;
@@ -233,34 +227,25 @@ namespace StarterAssets
             }
             else
             {
-                // reset the jump timeout timer
                 _jumpTimeoutDelta = JumpTimeout;
-
-                // fall timeout
                 if (_fallTimeoutDelta >= 0.0f)
                 {
                     _fallTimeoutDelta -= Time.deltaTime;
                 }
                 else
                 {
-                    // update animator if using character
                     if (_hasAnimator)
                     {
                         _animator.SetBool(_animIDFreeFall, true);
                     }
                 }
-
-                // if we are not grounded, do not jump
                 _input.jump = false;
             }
-
-            // apply gravity over time if under terminal (multiply by delta time twice to linearly speed up over time)
             if (Mathf.Abs(_verticalVelocity) < _terminalVelocity)
             {
                 _verticalVelocity += Gravity * Time.deltaTime;
             }
         }
-        // --- END OF REPLACED METHOD ---
 
         private static float ClampAngle(float lfAngle, float lfMin, float lfMax)
         {
