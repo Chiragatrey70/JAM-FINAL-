@@ -145,14 +145,11 @@ namespace StarterAssets
 
         private void Move()
         {
-            // --- THIS IS THE FINAL FIX ---
-            // If we are in the middle of flipping, stop all movement.
             if (_playerGravity != null && _playerGravity.isFlipping)
             {
                 _speed = 0f;
-                _input.move = Vector2.zero; // Also clear the input to prevent rotation calculation
+                _input.move = Vector2.zero;
             }
-            // --- END OF FIX ---
 
             float targetSpeed = _input.sprint ? SprintSpeed : MoveSpeed;
             if (_input.move == Vector2.zero) targetSpeed = 0.0f;
@@ -173,12 +170,11 @@ namespace StarterAssets
             Vector3 inputDirection = new Vector3(_input.move.x, 0.0f, _input.move.y).normalized;
             if (_input.move != Vector2.zero)
             {
-                float cameraYaw = _mainCamera.transform.eulerAngles.y;
-                if (_playerGravity != null && _playerGravity.IsFlipped)
-                {
-                    cameraYaw += 180f;
-                }
-                _targetRotation = Mathf.Atan2(inputDirection.x, inputDirection.z) * Mathf.Rad2Deg + cameraYaw;
+                // --- THIS IS THE FIXED SECTION ---
+                // We revert to the original logic, which works correctly with the camera's natural rotation.
+                _targetRotation = Mathf.Atan2(inputDirection.x, inputDirection.z) * Mathf.Rad2Deg + _mainCamera.transform.eulerAngles.y;
+                // --- END OF FIXED SECTION ---
+
                 float rotation = Mathf.SmoothDampAngle(transform.eulerAngles.y, _targetRotation, ref _rotationVelocity, RotationSmoothTime);
                 float zRotation = (_playerGravity != null && _playerGravity.IsFlipped) ? 180.0f : 0.0f;
                 transform.rotation = Quaternion.Euler(0.0f, rotation, zRotation);
